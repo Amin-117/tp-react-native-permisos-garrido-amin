@@ -49,7 +49,9 @@
     "typecheck": "tsc --noEmit",
     "doctor": "expo-doctor",
     "prebuild": "expo prebuild --clean",
-    "test:interpretar": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/probar-interpretar.mjs"
+    "test:interpretar": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/probar-interpretar.mjs",
+    "test:qr": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/probar-qr.mjs",
+    "test": "npm run -s test:interpretar && npm run -s test:qr"
   },
   "private": true
 }

@@ -36,13 +36,16 @@ function Previa({ recurso, siguiente }: { recurso: Recurso; siguiente?: Destino 
   const { estado, pedir } = usePermiso(recurso);
   const [pidiendo, setPidiendo] = useState(false);
 
-  // ÚNICO lugar de la app donde se llama a pedir(): como respuesta al toque en "Continuar".
+  // Único lugar donde se llama a pedir() de usePermiso, y solo al tocar "Continuar".
+  // (El escáner usa el requestPermission de useCameraPermissions: ver /reporte/escanear.)
   async function continuar() {
     setPidiendo(true);
     try {
       const respuesta = await pedir();
       if (interpretar(respuesta).estado === 'concedido' && siguiente) {
-        router.replace(siguiente); // concedido: seguimos a la función
+        // concedido: seguimos a la función. dismissTo vuelve a esa pantalla si ya está en el
+        // stack (p. ej. desde /reporte/foto) o reemplaza al modal si no (p. ej. /reporte/escanear).
+        router.dismissTo(siguiente);
       } else {
         router.back(); // no concedido: la pantalla de origen muestra su alternativa
       }
