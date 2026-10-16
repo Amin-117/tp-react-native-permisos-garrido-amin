@@ -1,5 +1,11 @@
 import { Stack } from "expo-router";
 
+import { ProveedorAlmacen } from "@/lib/almacen";
+
 export default function RootLayout() {
-  return <Stack />;
+  return (
+    <ProveedorAlmacen>
+      <Stack />
+    </ProveedorAlmacen>
+  );
 }
