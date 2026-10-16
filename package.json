@@ -48,7 +48,8 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "doctor": "expo-doctor",
-    "prebuild": "expo prebuild --clean"
+    "prebuild": "expo prebuild --clean",
+    "test:interpretar": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/probar-interpretar.mjs"
   },
   "private": true
 }

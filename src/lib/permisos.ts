@@ -5,19 +5,13 @@ import * as Notifications from 'expo-notifications';
 import { Platform, type PlatformOSType } from 'react-native';
 import type { PermissionResponse } from 'expo';
 
+export { interpretar, type EstadoPermiso, type Interpretacion } from './interpretar';
+
 // Adaptador uniforme: cada recurso expone consultar() y pedir() con la misma forma,
 // y interpretar() traduce cualquier respuesta a los cuatro estados de la app.
 // Las fotos NO están acá: se eligen con el selector del sistema, que no pide permiso.
 
 export type Recurso = 'camara' | 'ubicacion' | 'notificaciones';
-
-export type EstadoPermiso = 'cargando' | 'concedido' | 'preguntable' | 'bloqueado';
-
-export interface Interpretacion {
-  estado: EstadoPermiso;
-  parcial: boolean;
-  detalle?: string;
-}
 
 export interface DefinicionRecurso {
   titulo: string;
@@ -74,52 +68,6 @@ export const RECURSOS: Record<Recurso, DefinicionRecurso> = {
 
 export function esRecurso(valor: unknown): valor is Recurso {
   return typeof valor === 'string' && Object.hasOwn(RECURSOS, valor);
-}
-
-// Campos que algunos módulos agregan a PermissionResponse y que marcan un acceso parcial.
-interface Matices {
-  accessPrivileges?: 'all' | 'limited' | 'none'; // fotos (iOS 14+ / Android 14+)
-  android?: { accuracy?: string }; // ubicación: 'fine' | 'coarse' | 'none'
-  ios?: { accuracy?: string; status?: number }; // ubicación: 'full' | 'reduced'; notificaciones: status numérico
-}
-
-export function interpretar(respuesta: PermissionResponse | null): Interpretacion {
-  // null: todavía no terminó la primera consulta. Se muestra <Cargando />, nunca "denegado".
-  if (respuesta === null) return { estado: 'cargando', parcial: false };
-
-  const m = respuesta as PermissionResponse & Matices;
-
-  // Notificaciones provisionales (iOS 12+): en SDK 57 expo-notifications devuelve
-  // status 'undetermined' y granted false, así que hay que mirar ios.status antes que
-  // granted. Sin este caso, una autorización provisional se vería como "preguntable".
-  if (
-    m.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL ||
-    m.ios?.status === Notifications.IosAuthorizationStatus.EPHEMERAL
-  ) {
-    return { estado: 'concedido', parcial: true, detalle: 'provisional' };
-  }
-
-  // granted: se puede usar. Puede ser parcial: fotos limitadas o ubicación aproximada.
-  // Parcial no es un error: la función anda, con menos detalle.
-  if (respuesta.granted) {
-    if (m.accessPrivileges === 'limited') {
-      return { estado: 'concedido', parcial: true, detalle: 'acceso limitado' };
-    }
-    if (m.android?.accuracy === 'coarse' || m.ios?.accuracy === 'reduced') {
-      return { estado: 'concedido', parcial: true, detalle: 'ubicación aproximada' };
-    }
-    return { estado: 'concedido', parcial: false };
-  }
-
-  // No concedido pero canAskAgain true: todavía se puede mostrar el diálogo.
-  // Cubre 'undetermined' (nunca se preguntó) y 'denied' con canAskAgain (en Android,
-  // después del primer "No permitir"). La app muestra la pantalla previa con "Continuar".
-  if (respuesta.canAskAgain) return { estado: 'preguntable', parcial: false };
-
-  // No concedido y canAskAgain false: request…() ya no muestra nada y devuelve
-  // 'denied' al instante. Pasa en Android tras dos rechazos y en iOS tras el primero.
-  // Lo único que queda es mandar a Ajustes.
-  return { estado: 'bloqueado', parcial: false };
 }
 
 // Nombre con el que aparece la app en Ajustes. En Expo Go los permisos son de Expo Go,

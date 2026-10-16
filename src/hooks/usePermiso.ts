@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Linking } from 'react-native';
 import type { PermissionResponse } from 'expo';
 
-import { interpretar, RECURSOS, type EstadoPermiso, type Recurso } from '@/lib/permisos';
+import { interpretar, type EstadoPermiso } from '@/lib/interpretar';
+import { RECURSOS, type Recurso } from '@/lib/permisos';
 import { useRevisarAlVolver } from './useRevisarAlVolver';
 
 export interface ResultadoPermiso {
