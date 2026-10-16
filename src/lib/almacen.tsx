@@ -175,15 +175,22 @@ export function ProveedorAlmacen({ children }: { children: ReactNode }) {
 
   const limpiarBorrador = useCallback(() => dispatch({ tipo: 'limpiarBorrador' }), []);
 
-  // Devuelve el momento en que se va a resolver, para que la pantalla programe
-  // la notificación y el setTimeout con el mismo valor.
-  const programarResolucion = useCallback((id: string) => {
-    const para = Date.now() + DEMORA_RESOLUCION_MS;
-    dispatch({ tipo: 'programarResolucion', id, para });
-    return para;
-  }, []);
-
   const resolverPendientes = useCallback(() => dispatch({ tipo: 'resolverPendientes', ahora: Date.now() }), []);
+
+  // Pasa el reporte a "en curso" y, SIEMPRE (haya o no permiso de notificaciones),
+  // programa un setTimeout que lo resuelve y deja el aviso en /avisos. Vive acá y no en
+  // la pantalla para que se cumpla aunque la persona salga del detalle. Si la app se
+  // cierra antes, se resuelve al volver a abrirla (ver resolverPendientes en el layout).
+  // Devuelve el momento en que se va a resolver.
+  const programarResolucion = useCallback(
+    (id: string) => {
+      const para = Date.now() + DEMORA_RESOLUCION_MS;
+      dispatch({ tipo: 'programarResolucion', id, para });
+      setTimeout(resolverPendientes, DEMORA_RESOLUCION_MS + 100); // margen para que ya esté vencido
+      return para;
+    },
+    [resolverPendientes],
+  );
 
   const agregarAviso = useCallback<ValorAlmacen['agregarAviso']>(({ id, reporteId, texto }) => {
     dispatch({

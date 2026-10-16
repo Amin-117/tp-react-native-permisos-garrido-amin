@@ -12,7 +12,7 @@ export interface ResultadoPermiso {
   detalle?: string;
   respuesta: PermissionResponse | null;
   pedir: () => Promise<PermissionResponse>;
-  consultar: () => Promise<void>;
+  consultar: () => Promise<PermissionResponse | null>; // devuelve la respuesta (o null si falló)
   abrirAjustes: () => Promise<void>;
 }
 
@@ -31,8 +31,10 @@ export function usePermiso(recurso: Recurso): ResultadoPermiso {
     try {
       const r = await RECURSOS[recurso].consultar();
       setLeido({ recurso, respuesta: r });
+      return r;
     } catch {
       // Si la consulta falla (p. ej. módulo no disponible) nos quedamos en 'cargando'.
+      return null;
     }
   }, [recurso]);
 
