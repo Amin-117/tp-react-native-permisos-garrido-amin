@@ -1,6 +1,7 @@
+import { CameraView } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AvisoBloqueado } from '@/components/AvisoBloqueado';
@@ -9,13 +10,12 @@ import { COLORES, ESPACIO } from '@/components/tema';
 import { usePermiso } from '@/hooks/usePermiso';
 import { useAlmacen } from '@/lib/almacen';
 
-const OPCIONES: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], allowsEditing: true, quality: 0.8 };
-
 // "/reporte/foto" → adjuntar una foto del desperfecto.
 export default function Foto() {
   const { borrador, actualizarBorrador } = useAlmacen();
   const camara = usePermiso('camara');
   const [uri, setUri] = useState<string | undefined>(borrador.fotoUri);
+  const [camaraAbierta, setCamaraAbierta] = useState(false);
   const [mostrarBloqueo, setMostrarBloqueo] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,12 +33,19 @@ export default function Foto() {
   // app.json tiene photosPermission: false y bloquea READ_MEDIA_IMAGES.
   async function elegirDeGaleria() {
     setError(null);
-    const resultado = await ImagePicker.launchImageLibraryAsync(OPCIONES);
+    const resultado = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+    });
     if (!resultado.canceled) setUri(resultado.assets[0].uri);
   }
 
-  // Sacar una foto SÍ usa la cámara: necesita permiso.
-  async function sacarFoto() {
+  // Sacar una foto SÍ usa la cámara: necesita permiso. Usamos CameraView de expo-camera
+  // (el mismo permiso que el escáner) y no launchCameraAsync de image-picker, porque este
+  // último pide el permiso por su cuenta si falta (salteando la pantalla previa) y en
+  // Android 7–9 exige WRITE_EXTERNAL_STORAGE, que bloqueamos.
+  function sacarFoto() {
     setError(null);
     if (camara.estado === 'preguntable') {
       // Primero la pantalla previa; si concede, dismissTo vuelve a esta pantalla.
@@ -49,16 +56,25 @@ export default function Foto() {
       setMostrarBloqueo(true);
       return;
     }
-    // Solo con el permiso concedido: en Android, launchCameraAsync pide el permiso por su
-    // cuenta si falta, y eso saltearía la pantalla previa.
-    try {
-      const resultado = await ImagePicker.launchCameraAsync(OPCIONES);
-      if (!resultado.canceled) setUri(resultado.assets[0].uri);
-    } catch {
-      // P. ej. Android 9 o anterior: ahí la cámara del selector exige WRITE_EXTERNAL_STORAGE,
-      // que bloqueamos por mínimo privilegio.
-      setError('No pudimos abrir la cámara. Podés elegir la foto de la galería.');
-    }
+    setCamaraAbierta(true);
+  }
+
+  // La vista de cámara solo se monta con el permiso concedido. Si se revoca desde Ajustes
+  // con la cámara abierta, al volver usePermiso re-consulta y se cierra sola.
+  if (camaraAbierta && camara.estado === 'concedido') {
+    return (
+      <Camara
+        onFoto={(nueva) => {
+          setUri(nueva);
+          setCamaraAbierta(false);
+        }}
+        onError={() => {
+          setCamaraAbierta(false);
+          setError('No pudimos sacar la foto. Probá de nuevo o elegila de la galería.');
+        }}
+        onCancelar={() => setCamaraAbierta(false)}
+      />
+    );
   }
 
   return (
@@ -111,6 +127,44 @@ export default function Foto() {
   );
 }
 
+function Camara({
+  onFoto,
+  onError,
+  onCancelar,
+}: {
+  onFoto: (uri: string) => void;
+  onError: () => void;
+  onCancelar: () => void;
+}) {
+  const ref = useRef<CameraView>(null);
+  const [lista, setLista] = useState(false); // takePictureAsync falla si la cámara no terminó de abrir
+  const [sacando, setSacando] = useState(false);
+
+  async function disparar() {
+    if (!ref.current) return;
+    setSacando(true);
+    try {
+      // La foto queda en la caché de la app: no hace falta ningún permiso de almacenamiento.
+      const foto = await ref.current.takePictureAsync({ quality: 0.8 });
+      onFoto(foto.uri);
+    } catch {
+      onError();
+    } finally {
+      setSacando(false);
+    }
+  }
+
+  return (
+    <View style={estilos.camaraContenedor}>
+      <CameraView ref={ref} style={StyleSheet.absoluteFill} facing="back" mode="picture" onCameraReady={() => setLista(true)} />
+      <View style={estilos.camaraPie}>
+        <Boton texto="Sacar foto" onPress={disparar} ocupado={sacando} deshabilitado={!lista} />
+        <Boton texto="Cancelar" variante="secundario" onPress={onCancelar} />
+      </View>
+    </View>
+  );
+}
+
 const estilos = StyleSheet.create({
   contenido: { gap: ESPACIO.m, padding: ESPACIO.l },
   vista: {
@@ -128,4 +182,14 @@ const estilos = StyleSheet.create({
   nota: { fontSize: 13, color: COLORES.textoSuave, textAlign: 'center', marginTop: -ESPACIO.xs },
   error: { fontSize: 14, color: COLORES.peligro, textAlign: 'center' },
   acciones: { gap: ESPACIO.s, marginTop: ESPACIO.m },
+  camaraContenedor: { flex: 1, backgroundColor: '#000' },
+  camaraPie: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    gap: ESPACIO.s,
+    padding: ESPACIO.xl,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
 });

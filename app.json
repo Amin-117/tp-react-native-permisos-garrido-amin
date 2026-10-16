@@ -67,7 +67,6 @@
         "expo-image-picker",
         {
           "photosPermission": false,
-          "cameraPermission": "Usamos tu cámara para leer el QR de la puerta del aula y sacar fotos del desperfecto que reportás.",
           "microphonePermission": false
         }
       ],
