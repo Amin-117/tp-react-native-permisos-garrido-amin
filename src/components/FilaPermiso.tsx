@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import type { PermissionResponse } from 'expo';
 
@@ -13,7 +14,6 @@ interface Props {
   parcial: boolean;
   detalle?: string;
   respuesta: PermissionResponse | null;
-  onPedir: () => void; // abre /permisos/[recurso]; no pide directo
   onAbrirAjustes: () => void;
 }
 
@@ -40,7 +40,7 @@ function matices(respuesta: PermissionResponse | null): string[] {
   return lista;
 }
 
-export function FilaPermiso({ recurso, estado, parcial, detalle, respuesta, onPedir, onAbrirAjustes }: Props) {
+export function FilaPermiso({ recurso, estado, parcial, detalle, respuesta, onAbrirAjustes }: Props) {
   const { titulo, icono } = RECURSOS[recurso];
   return (
     <View style={estilos.fila}>
@@ -57,7 +57,15 @@ export function FilaPermiso({ recurso, estado, parcial, detalle, respuesta, onPe
       <Text style={estilos.tecnico}>
         {Platform.OS} · {matices(respuesta).join(' · ')}
       </Text>
-      {estado === 'preguntable' ? <Boton texto="Pedir" variante="secundario" onPress={onPedir} /> : null}
+      {/* "preguntable" incluye undetermined y denied con canAskAgain true. "Pedir" NO llama a
+          pedir(): abre la pantalla previa, y el pedido sale de su botón "Continuar". */}
+      {estado === 'preguntable' ? (
+        <Boton
+          texto="Pedir"
+          variante="secundario"
+          onPress={() => router.push({ pathname: '/permisos/[recurso]', params: { recurso } })}
+        />
+      ) : null}
       {estado === 'bloqueado' || parcial ? (
         <Boton texto="Abrir Ajustes" variante="secundario" onPress={onAbrirAjustes} />
       ) : null}
