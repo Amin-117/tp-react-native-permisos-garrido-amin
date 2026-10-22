@@ -1,4 +1,3 @@
-import * as Notifications from 'expo-notifications';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -8,10 +7,10 @@ import { Cargando } from '@/components/Cargando';
 import { EtiquetaEstado } from '@/components/EtiquetaEstado';
 import { COLORES, ESPACIO } from '@/components/tema';
 import { usePermiso } from '@/hooks/usePermiso';
-import { DEMORA_RESOLUCION_MS, textoAvisoResolucion, useAlmacen } from '@/lib/almacen';
+import { useAlmacen } from '@/lib/almacen';
 import { describirUbicacion, ETIQUETA_CATEGORIA } from '@/lib/etiquetas';
 import { esIdValido } from '@/lib/ids';
-import { CANAL_REPORTES } from '@/lib/permisos';
+import { programarAvisoResolucion } from '@/lib/notificaciones';
 import type { Reporte } from '@/lib/tipos';
 
 // "/reporte/[id]" → detalle. El id viene de la URL: se valida antes de buscarlo.
@@ -58,18 +57,7 @@ function Detalle({ reporte }: { reporte: Reporte }) {
       return;
     }
     try {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: 'Reporte resuelto',
-          body: textoAvisoResolucion(reporte),
-          data: { reporteId: reporte.id },
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-          seconds: DEMORA_RESOLUCION_MS / 1000,
-          channelId: CANAL_REPORTES, // Android: el canal creado antes de pedir el permiso
-        },
-      });
+      await programarAvisoResolucion(reporte);
       setAviso('En 10 segundos te llega una notificación y el aviso en la pestaña Avisos.');
     } catch {
       setAviso('No pudimos programar la notificación. En 10 segundos vas a ver el aviso en la pestaña Avisos.');

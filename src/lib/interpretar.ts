@@ -3,7 +3,9 @@ import type { PermissionResponse } from 'expo';
 // Lógica pura, sin módulos nativos: se puede probar con objetos de ejemplo
 // (ver scripts/probar-interpretar.mjs).
 
-export type EstadoPermiso = 'cargando' | 'concedido' | 'preguntable' | 'bloqueado';
+// 'no_disponible' no sale de interpretar(): lo pone usePermiso cuando el módulo nativo
+// no está en este entorno (ver lib/notificaciones.ts).
+export type EstadoPermiso = 'cargando' | 'concedido' | 'preguntable' | 'bloqueado' | 'no_disponible';
 
 export interface Interpretacion {
   estado: EstadoPermiso;

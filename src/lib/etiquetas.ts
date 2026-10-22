@@ -29,7 +29,12 @@ export const ETIQUETA_ESTADO_PERMISO: Record<EstadoPermiso, string> = {
   concedido: 'Concedido',
   preguntable: 'Sin decidir / se puede pedir',
   bloqueado: 'Bloqueado',
+  no_disponible: 'No disponible en este entorno',
 };
+
+// Por qué un permiso figura "no disponible" y dónde sí funciona.
+export const TEXTO_NO_DISPONIBLE =
+  'Expo Go no incluye este módulo nativo: funciona en la development build (eas build --profile development o npx expo run:android).';
 
 // Una ubicación aproximada nunca muestra coordenadas: solo "Ubicación aproximada".
 export function describirUbicacion(u: UbicacionReporte): string {

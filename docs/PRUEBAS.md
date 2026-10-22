@@ -20,7 +20,8 @@ El detalle de cada permiso está en [AUDITORIA_MANIFIESTO.md](AUDITORIA_MANIFIES
 | | Expo Go (`npm run start:go`) | Development build (`npm start`) |
 |---|---|---|
 | Lógica de estados, pantallas previas, alternativas | ✅ | ✅ |
-| Notificación local y bandeja de avisos | ✅ | ✅ |
+| Bandeja de avisos (`/avisos`) | ✅ | ✅ |
+| Notificación local (permiso, canal, banner) | ❌ Android: figura "No disponible en este entorno" (Expo Go no trae el módulo nativo) | ✅ |
 | **Nuestro texto de propósito** en el diálogo de iOS | ❌ (se ve el de Expo Go) | ✅ |
 | `blockedPermissions` y el manifiesto real | ❌ (es el manifiesto de Expo Go) | ✅ |
 | Los permisos son de… | Expo Go (`host.exp.exponent`) | nuestra app (`ar.edu.ipf.mantenimiento`) |
@@ -78,8 +79,13 @@ Marcar ✅ / ❌ y anotar el dispositivo y la versión de Android/iOS.
 - [ ] Cerrar y reabrir la app: el reporte sigue ahí.
 
 ### 4.6 Notificaciones y avisos
+Las notificaciones se prueban **solo en la development build** (`npm start`). En Expo Go Android, solo las tres primeras filas:
+
 | Caso | Esperado | ✅/❌ |
 |---|---|---|
+| Expo Go Android: abrir la app | Arranca sin el error de `ExpoTopicSubscriptionModule` | |
+| Expo Go Android: `/permisos` y `/ajustes-app` | Notificaciones "No disponible en este entorno"; interruptor apagado y deshabilitado, con la explicación de la development build | |
+| Expo Go Android: Simular resolución | Sin notificación; a los 10 s "Resuelto" + aviso en `/avisos` | |
 | Interruptor, sin decidir → Permitir | Queda encendido | |
 | Interruptor, sin decidir → No permitir o cerrar el modal | Apagado + "Igual vas a ver los avisos en la pestaña Avisos" | |
 | Interruptor, bloqueado | Queda apagado + pasos de Ajustes | |

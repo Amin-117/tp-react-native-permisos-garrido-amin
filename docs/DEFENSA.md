@@ -12,10 +12,10 @@ Cada pregunta con el archivo y la línea que la responde. Las líneas correspond
 
 | Dónde | Qué mostrar |
 |---|---|
-| [src/lib/interpretar.ts:61](../src/lib/interpretar.ts#L61) | `if (respuesta.canAskAgain) return { estado: 'preguntable' … }` |
-| [src/lib/interpretar.ts:66](../src/lib/interpretar.ts#L66) | si no → `{ estado: 'bloqueado' }` |
-| [src/components/PantallaPrevia.tsx:26](../src/components/PantallaPrevia.tsx#L26) | `bloqueado` → `<AvisoBloqueado>` |
-| [src/components/PantallaPrevia.tsx:51](../src/components/PantallaPrevia.tsx#L51) | `preguntable` → botón "Continuar" |
+| [src/lib/interpretar.ts:63](../src/lib/interpretar.ts#L63) | `if (respuesta.canAskAgain) return { estado: 'preguntable' … }` |
+| [src/lib/interpretar.ts:68](../src/lib/interpretar.ts#L68) | si no → `{ estado: 'bloqueado' }` |
+| [src/components/PantallaPrevia.tsx:27](../src/components/PantallaPrevia.tsx#L27) | `bloqueado` → `<AvisoBloqueado>` |
+| [src/components/PantallaPrevia.tsx:64](../src/components/PantallaPrevia.tsx#L64) | `preguntable` → botón "Continuar" |
 | [src/components/AvisoBloqueado.tsx:38](../src/components/AvisoBloqueado.tsx#L38) | botón "Abrir Ajustes" → `Linking.openSettings()` |
 | [src/app/reporte/escanear.tsx:50](../src/app/reporte/escanear.tsx#L50) | en el escáner, la misma decisión leída a mano: `permiso.canAskAgain ? <PantallaPrevia> : <AvisoBloqueado>` |
 
@@ -37,8 +37,8 @@ En ningún `useEffect` ni render se llama a `request…()`.
 |---|---|
 | [src/hooks/useRevisarAlVolver.ts:13](../src/hooks/useRevisarAlVolver.ts#L13) | Receta 5: `anterior.current !== 'active' && nuevo === 'active'` → re-consultar |
 | [src/hooks/useRevisarAlVolver.ts:16](../src/hooks/useRevisarAlVolver.ts#L16) | limpieza: `sub.remove()` |
-| [src/hooks/usePermiso.ts:52](../src/hooks/usePermiso.ts#L52) | al montar (incluido el arranque después de que Android mató el proceso), solo **consulta** |
-| [src/hooks/usePermiso.ts:66](../src/hooks/usePermiso.ts#L66) | `useRevisarAlVolver(consultar)`: si el proceso no murió (por ejemplo, al **habilitar** en Ajustes), se entera al volver al primer plano |
+| [src/hooks/usePermiso.ts:53](../src/hooks/usePermiso.ts#L53) | al montar (incluido el arranque después de que Android mató el proceso), solo **consulta** |
+| [src/hooks/usePermiso.ts:68](../src/hooks/usePermiso.ts#L68) | `useRevisarAlVolver(consultar)`: si el proceso no murió (por ejemplo, al **habilitar** en Ajustes), se entera al volver al primer plano |
 | [src/hooks/usePermiso.ts:30](../src/hooks/usePermiso.ts#L30) | `consultar` con `useCallback`, para no re-suscribirse a `AppState` en cada render |
 | [src/app/reporte/escanear.tsx:30](../src/app/reporte/escanear.tsx#L30) | en el escáner: `useRevisarAlVolver(consultarPermiso)` con el hook de `expo-camera` |
 | [src/lib/almacen.tsx](../src/lib/almacen.tsx) (comentario del principio) | el estado de los permisos **no** se guarda en el almacén ni en AsyncStorage |
@@ -78,9 +78,9 @@ El plugin de image-picker **bloqueó `CAMERA` para toda la app**, y el escáner 
 ## 4. ¿Qué cambia si la persona elige ubicación aproximada? ¿Y si la deniega?
 
 **Aproximada:**
-- `interpretar()` lo marca como **parcial** (`android.accuracy === 'coarse'` o `ios.accuracy === 'reduced'`): [src/lib/interpretar.ts:52](../src/lib/interpretar.ts#L52).
+- `interpretar()` lo marca como **parcial** (`android.accuracy === 'coarse'` o `ios.accuracy === 'reduced'`): [src/lib/interpretar.ts:54](../src/lib/interpretar.ts#L54).
 - La posición se guarda con `aproximada: parcial`: [src/app/reporte/ubicacion.tsx:41](../src/app/reporte/ubicacion.tsx#L41).
-- Si es aproximada, **no se muestran coordenadas**, solo "Ubicación aproximada": [src/lib/etiquetas.ts:37](../src/lib/etiquetas.ts#L37). Si es precisa, coordenadas con 4 decimales ([:38](../src/lib/etiquetas.ts#L38)).
+- Si es aproximada, **no se muestran coordenadas**, solo "Ubicación aproximada": [src/lib/etiquetas.ts:42](../src/lib/etiquetas.ts#L42). Si es precisa, coordenadas con 4 decimales ([:43](../src/lib/etiquetas.ts#L43)).
 - La app sigue funcionando; además ofrece elegir el sector.
 
 **Denegada o bloqueada:**
@@ -98,9 +98,20 @@ El plugin de image-picker **bloqueó `CAMERA` para toda la app**, y el escáner 
 - los permisos que doy son **de Expo Go** (por eso los `adb` de prueba usan `host.exp.exponent`);
 - `blockedPermissions` no tiene efecto.
 
-En el código lo tengo en cuenta: `pasosAjustes()` dice "Expo Go" en el camino de Ajustes cuando corre ahí ([src/lib/permisos.ts:76](../src/lib/permisos.ts#L76)).
+En el código lo tengo en cuenta: `pasosAjustes()` dice "Expo Go" en el camino de Ajustes cuando corre ahí ([src/lib/permisos.ts:67](../src/lib/permisos.ts#L67)).
 
 Para ver mis textos hace falta una **development build** (`eas build --profile development --platform android`). En Android igual no se ven en el diálogo: Android no muestra texto propio, solo iOS.
+
+### Ejemplo: "la app nunca se bloquea", ni cuando falta un módulo nativo
+
+En Expo Go Android (SDK 57) la app no arrancaba: `Cannot find native module 'ExpoTopicSubscriptionModule'`. El binario de Expo Go ya no trae los módulos nativos de `expo-notifications`, y como `_layout.tsx` lo importaba arriba de todo, el error al evaluar el archivo tumbaba el layout y Expo Router veía las rutas "sin default export".
+
+**Arreglo:** un solo archivo usa `expo-notifications` y lo carga de forma perezosa:
+- [src/lib/notificaciones.ts:17](../src/lib/notificaciones.ts#L17): en Expo Go Android **ni se intenta**: `isRunningInExpoGo()` → `null`. Se sabe que va a fallar, y el paquete además tira un `console.error` que en desarrollo abre la pantalla roja.
+- [:21](../src/lib/notificaciones.ts#L21): en el resto, `require()` dentro de `try/catch` (un `import` arriba de todo falla antes de que se pueda atrapar).
+- [src/hooks/usePermiso.ts:71](../src/hooks/usePermiso.ts#L71): sin módulo, el estado es `no_disponible` (si no, quedaría "Consultando…" para siempre). `/permisos` lo muestra así y el interruptor de `/ajustes-app` queda apagado y explica que funciona en la development build.
+
+**Lo que sigue andando:** "Simular resolución" programa **siempre** el `setTimeout` ([src/lib/almacen.tsx:189](../src/lib/almacen.tsx#L189)), así que el reporte pasa a "Resuelto" y el aviso aparece en `/avisos`. La notificación del sistema es un extra ([src/app/reporte/[id].tsx:55](../src/app/reporte/[id].tsx#L55)): sin módulo, simplemente no se manda. Es la misma regla que con un permiso denegado: ninguna función depende de que algo nativo esté.
 
 ---
 
@@ -119,9 +130,9 @@ El manifiesto y el `Info.plist` van dentro del binario instalado: **hace falta u
 
 | Pregunta | Dónde |
 |---|---|
-| ¿Dónde se crea el canal "reportes" y por qué antes de pedir? | [src/lib/permisos.ts:61](../src/lib/permisos.ts#L61) (`crearCanalReportes()` antes de `requestPermissionsAsync`) y [:33](../src/lib/permisos.ts#L33) |
-| ¿Cómo aparece el aviso si las notificaciones están denegadas? | `setTimeout` siempre en `programarResolucion`: [src/lib/almacen.tsx:189](../src/lib/almacen.tsx#L189). La notificación es un extra: [src/app/reporte/[id].tsx:56](../src/app/reporte/[id].tsx#L56) |
-| ¿Por qué el estado provisional de iOS no se ve como "concedido" mirando `granted`? | [src/lib/interpretar.ts:35](../src/lib/interpretar.ts#L35): en SDK 57, provisional devuelve `granted: false`; hay que mirar `ios.status` |
+| ¿Dónde se crea el canal "reportes" y por qué antes de pedir? | [src/lib/notificaciones.ts:59](../src/lib/notificaciones.ts#L59) (`setNotificationChannelAsync` dentro de `pedirPermisoNotificaciones()`, antes de `requestPermissionsAsync` en [:65](../src/lib/notificaciones.ts#L65)) |
+| ¿Cómo aparece el aviso si las notificaciones están denegadas? | `setTimeout` siempre en `programarResolucion`: [src/lib/almacen.tsx:189](../src/lib/almacen.tsx#L189). La notificación es un extra: [src/app/reporte/[id].tsx:55](../src/app/reporte/[id].tsx#L55) |
+| ¿Por qué el estado provisional de iOS no se ve como "concedido" mirando `granted`? | [src/lib/interpretar.ts:37](../src/lib/interpretar.ts#L37): en SDK 57, provisional devuelve `granted: false`; hay que mirar `ios.status` |
 | ¿Cómo evitás que un link externo te mande a cualquier pantalla después del permiso? | Lista cerrada de destinos: [src/lib/navegacion.ts:9](../src/lib/navegacion.ts#L9) |
 | ¿Por qué el escáner usa `useCameraPermissions` y no `usePermiso`? | Lo pide la consigna; comentario en [src/app/reporte/escanear.tsx:17](../src/app/reporte/escanear.tsx#L17) |
 | ¿Qué pasa si concede desde la pantalla previa? | `router.dismissTo(siguiente)`: [src/app/permisos/[recurso].tsx:48](../src/app/permisos/[recurso].tsx#L48). Si no concede, `router.back()` ([:50](../src/app/permisos/[recurso].tsx#L50)) y la pantalla de origen muestra la alternativa |

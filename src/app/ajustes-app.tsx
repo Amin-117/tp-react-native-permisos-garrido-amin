@@ -6,6 +6,7 @@ import { AvisoBloqueado } from '@/components/AvisoBloqueado';
 import { COLORES, ESPACIO } from '@/components/tema';
 import { usePermiso } from '@/hooks/usePermiso';
 import { useAlmacen } from '@/lib/almacen';
+import { TEXTO_NO_DISPONIBLE } from '@/lib/etiquetas';
 import { interpretar } from '@/lib/interpretar';
 
 const SIN_PERMISO = 'Igual vas a ver los avisos en la pestaña Avisos.';
@@ -73,7 +74,7 @@ export default function AjustesApp() {
         <Switch
           value={encendido}
           onValueChange={cambiar}
-          disabled={estado === 'cargando'}
+          disabled={estado === 'cargando' || estado === 'no_disponible'}
           trackColor={{ true: COLORES.primario }}
           accessibilityLabel="Avisarme cuando se resuelva mi reporte"
         />
@@ -82,6 +83,13 @@ export default function AjustesApp() {
         Te mandamos una notificación cuando mantenimiento resuelve un reporte tuyo. Si la apagás, solo dejamos de
         mandarla: el permiso del sistema no cambia.
       </Text>
+
+      {/* Expo Go Android no trae expo-notifications: el interruptor queda apagado y lo explicamos. */}
+      {estado === 'no_disponible' ? (
+        <Text style={estilos.mensaje}>
+          {TEXTO_NO_DISPONIBLE} {SIN_PERMISO}
+        </Text>
+      ) : null}
 
       {/* La preferencia quedó encendida pero el permiso se quitó desde Ajustes. */}
       {preferencias.avisarResolucion && (estado === 'bloqueado' || estado === 'preguntable') && !mostrarBloqueo ? (

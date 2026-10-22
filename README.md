@@ -16,8 +16,8 @@ npm install
 
 | Para… | Comando |
 |---|---|
-| Probar en **Expo Go** (lógica, estados, alternativas, notificación local) | `npm run start:go` |
-| Abrir en la **development build** (textos de propósito y permisos reales) | `npm start` |
+| Probar en **Expo Go** (lógica, estados, alternativas, bandeja de avisos; en Android las notificaciones figuran "no disponible") | `npm run start:go` |
+| Abrir en la **development build** (textos de propósito, permisos reales y notificaciones) | `npm start` |
 | Compilar la development build de Android en la nube (EAS) | `eas build --profile development --platform android` |
 | Compilar un APK de prueba sin dev client | `eas build --profile preview --platform android` |
 | Ver los archivos nativos que se generan | `npm run prebuild` (regenera `android/`; no se sube a git) |

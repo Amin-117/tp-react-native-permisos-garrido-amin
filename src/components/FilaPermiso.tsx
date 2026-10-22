@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import type { PermissionResponse } from 'expo';
 
-import { ETIQUETA_ESTADO_PERMISO } from '@/lib/etiquetas';
+import { ETIQUETA_ESTADO_PERMISO, TEXTO_NO_DISPONIBLE } from '@/lib/etiquetas';
 import type { EstadoPermiso } from '@/lib/interpretar';
 import { RECURSOS, type Recurso } from '@/lib/permisos';
 import { Boton } from './Boton';
@@ -22,6 +22,7 @@ const COLOR_ESTADO: Record<EstadoPermiso, string> = {
   concedido: COLORES.exito,
   preguntable: COLORES.advertencia,
   bloqueado: COLORES.peligro,
+  no_disponible: COLORES.textoSuave,
 };
 
 // Los campos crudos que dan el matiz, para mostrarlos tal cual en el panel.
@@ -54,6 +55,7 @@ export function FilaPermiso({ recurso, estado, parcial, detalle, respuesta, onAb
         </Text>
       </View>
       {detalle ? <Text style={estilos.detalle}>Matiz: {detalle}</Text> : null}
+      {estado === 'no_disponible' ? <Text style={estilos.detalle}>{TEXTO_NO_DISPONIBLE}</Text> : null}
       <Text style={estilos.tecnico}>
         {Platform.OS} · {matices(respuesta).join(' · ')}
       </Text>

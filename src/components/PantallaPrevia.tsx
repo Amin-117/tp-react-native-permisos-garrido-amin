@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { TEXTO_NO_DISPONIBLE } from '@/lib/etiquetas';
 import type { EstadoPermiso } from '@/lib/interpretar';
 import { RECURSOS, type Recurso } from '@/lib/permisos';
 import { AvisoBloqueado } from './AvisoBloqueado';
@@ -26,6 +27,18 @@ export function PantallaPrevia({ recurso, estado, onContinuar, ocupado = false, 
   if (estado === 'bloqueado') return <AvisoBloqueado recurso={recurso} alternativa={alternativa} />;
 
   const { titulo, beneficio, icono } = RECURSOS[recurso];
+
+  if (estado === 'no_disponible') {
+    return (
+      <View style={estilos.contenedor}>
+        <Text style={estilos.titulo}>
+          {icono} {titulo}: no disponible en este entorno
+        </Text>
+        <Text style={estilos.beneficio}>{TEXTO_NO_DISPONIBLE}</Text>
+        {alternativa ? <Text style={estilos.aclaracion}>{alternativa}</Text> : null}
+      </View>
+    );
+  }
 
   if (estado === 'concedido') {
     return (

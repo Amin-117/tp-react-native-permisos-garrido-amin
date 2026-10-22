@@ -1,9 +1,14 @@
 import { Camera } from 'expo-camera';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Location from 'expo-location';
-import * as Notifications from 'expo-notifications';
 import { Platform, type PlatformOSType } from 'react-native';
 import type { PermissionResponse } from 'expo';
+
+import {
+  consultarPermisoNotificaciones,
+  notificacionesDisponibles,
+  pedirPermisoNotificaciones,
+} from './notificaciones';
 
 export { interpretar, type EstadoPermiso, type Interpretacion } from './interpretar';
 
@@ -17,24 +22,12 @@ export interface DefinicionRecurso {
   titulo: string;
   beneficio: string;
   icono: string;
+  // false si el módulo nativo no está en este entorno (notificaciones en Expo Go Android).
+  disponible: boolean;
   // Solo lee el estado: nunca muestra un diálogo.
   consultar: () => Promise<PermissionResponse>;
   // Puede mostrar el diálogo del sistema. Llamarlo solo como respuesta a un toque.
   pedir: () => Promise<PermissionResponse>;
-}
-
-export const CANAL_REPORTES = 'reportes';
-
-// En Android 8+ las notificaciones necesitan un canal. Lo creamos antes de pedir el
-// permiso para que el diálogo del sistema (Android 13+) aparezca en ese momento y
-// no cuando llegue la primera notificación. Crear un canal que ya existe no hace nada.
-async function crearCanalReportes(): Promise<void> {
-  if (Platform.OS !== 'android') return; // en iOS no existen los canales
-  await Notifications.setNotificationChannelAsync(CANAL_REPORTES, {
-    name: 'Reportes',
-    description: 'Avisos cuando se resuelve un reporte',
-    importance: Notifications.AndroidImportance.DEFAULT,
-  });
 }
 
 export const RECURSOS: Record<Recurso, DefinicionRecurso> = {
@@ -42,6 +35,7 @@ export const RECURSOS: Record<Recurso, DefinicionRecurso> = {
     titulo: 'Cámara',
     beneficio: 'Para leer el QR de la puerta del aula y sacar fotos del desperfecto.',
     icono: '📷',
+    disponible: true,
     consultar: () => Camera.getCameraPermissionsAsync(),
     pedir: () => Camera.requestCameraPermissionsAsync(),
   },
@@ -49,6 +43,7 @@ export const RECURSOS: Record<Recurso, DefinicionRecurso> = {
     titulo: 'Ubicación',
     beneficio: 'Para marcar en qué parte del edificio está el problema. Solo mientras usás la app.',
     icono: '📍',
+    disponible: true,
     consultar: () => Location.getForegroundPermissionsAsync(),
     pedir: () => Location.requestForegroundPermissionsAsync(),
   },
@@ -56,13 +51,9 @@ export const RECURSOS: Record<Recurso, DefinicionRecurso> = {
     titulo: 'Notificaciones',
     beneficio: 'Para avisarte cuando se resuelva el reporte que hiciste.',
     icono: '🔔',
-    consultar: () => Notifications.getPermissionsAsync(),
-    pedir: async () => {
-      await crearCanalReportes(); // primero el canal, después el pedido
-      return Notifications.requestPermissionsAsync({
-        ios: { allowAlert: true, allowBadge: true, allowSound: true },
-      });
-    },
+    disponible: notificacionesDisponibles,
+    consultar: consultarPermisoNotificaciones,
+    pedir: pedirPermisoNotificaciones, // primero crea el canal "reportes", después pide
   },
 };
 

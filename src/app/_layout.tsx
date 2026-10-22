@@ -1,4 +1,3 @@
-import * as Notifications from 'expo-notifications';
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -7,17 +6,8 @@ import { COLORES } from '@/components/tema';
 import { useRevisarAlVolver } from '@/hooks/useRevisarAlVolver';
 import { ProveedorAlmacen, useAlmacen } from '@/lib/almacen';
 import { esIdValido } from '@/lib/ids';
-
-// Con la app abierta, iOS y Android no muestran las notificaciones locales a menos que
-// se lo indiquemos. Esto NO pide ningún permiso: solo dice cómo mostrar las que lleguen.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+// Al cargarse configura cómo se muestran las notificaciones con la app abierta (si el módulo existe).
+import { alRecibirNotificacion, alTocarNotificacion, ultimoReporteTocado } from '@/lib/notificaciones';
 
 // Layout raíz. Acá no se pide ningún permiso: cada uno se pide al tocar su función.
 export default function RootLayout() {
@@ -47,29 +37,29 @@ export default function RootLayout() {
   );
 }
 
-function abrirReporte(respuesta: Notifications.NotificationResponse) {
-  const id = respuesta.notification.request.content.data?.reporteId;
+// El reporteId viene de afuera (la notificación): se valida antes de navegar.
+function abrirReporte(id: unknown) {
   if (esIdValido(id)) router.push({ pathname: '/reporte/[id]', params: { id } });
-  // Para no volver a abrirlo si después se consulta la última respuesta.
-  Notifications.clearLastNotificationResponse();
 }
 
 // Mantiene los reportes al día. resolverPendientes() es idempotente: lo pueden llamar
 // todos estos caminos y cada reporte se resuelve (y genera su aviso) una sola vez.
+// Sin expo-notifications (Expo Go Android) las suscripciones no hacen nada y
+// quedan la carga inicial y el volver al primer plano.
 function OyenteNotificaciones() {
   const { cargado, resolverPendientes } = useAlmacen();
 
   useEffect(() => {
     // Llegó una notificación con la app abierta.
-    const recibida = Notifications.addNotificationReceivedListener(() => resolverPendientes());
+    const dejarRecibida = alRecibirNotificacion(() => resolverPendientes());
     // La persona tocó una notificación (con la app abierta o en segundo plano): abrimos el reporte.
-    const respondida = Notifications.addNotificationResponseReceivedListener((respuesta) => {
+    const dejarTocada = alTocarNotificacion((id) => {
       resolverPendientes();
-      abrirReporte(respuesta);
+      abrirReporte(id);
     });
     return () => {
-      recibida.remove();
-      respondida.remove();
+      dejarRecibida();
+      dejarTocada();
     };
   }, [resolverPendientes]);
 
@@ -78,8 +68,7 @@ function OyenteNotificaciones() {
   useEffect(() => {
     if (!cargado) return;
     resolverPendientes();
-    const ultima = Notifications.getLastNotificationResponse();
-    if (ultima) abrirReporte(ultima);
+    abrirReporte(ultimoReporteTocado());
   }, [cargado, resolverPendientes]);
 
   // Al volver al primer plano (p. ej. si la notificación llegó con la app en segundo plano).

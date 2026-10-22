@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Linking } from 'react-native';
 import type { PermissionResponse } from 'expo';
 
-import { interpretar, type EstadoPermiso } from '@/lib/interpretar';
+import { interpretar, type EstadoPermiso, type Interpretacion } from '@/lib/interpretar';
 import { RECURSOS, type Recurso } from '@/lib/permisos';
 import { useRevisarAlVolver } from './useRevisarAlVolver';
 
@@ -28,6 +28,7 @@ export function usePermiso(recurso: Recurso): ResultadoPermiso {
   // useCallback: la misma función mientras no cambie el recurso, así
   // useRevisarAlVolver no se re-suscribe a AppState en cada render.
   const consultar = useCallback(async () => {
+    if (!RECURSOS[recurso].disponible) return null;
     try {
       const r = await RECURSOS[recurso].consultar();
       setLeido({ recurso, respuesta: r });
@@ -50,6 +51,7 @@ export function usePermiso(recurso: Recurso): ResultadoPermiso {
   // El setState va en el .then() (respuesta del sistema), y 'activo' descarta la
   // respuesta si la pantalla se desmontó o cambió de recurso mientras tanto.
   useEffect(() => {
+    if (!RECURSOS[recurso].disponible) return;
     let activo = true;
     RECURSOS[recurso]
       .consultar()
@@ -65,6 +67,9 @@ export function usePermiso(recurso: Recurso): ResultadoPermiso {
   // Al volver de Ajustes (o de cualquier otra app): re-consultar.
   useRevisarAlVolver(consultar);
 
-  const { estado, parcial, detalle } = interpretar(respuesta);
+  // Sin el módulo nativo no hay nada que consultar: sin esto quedaría en 'cargando' para siempre.
+  const { estado, parcial, detalle }: Interpretacion = RECURSOS[recurso].disponible
+    ? interpretar(respuesta)
+    : { estado: 'no_disponible', parcial: false };
   return { estado, parcial, detalle, respuesta, pedir, consultar, abrirAjustes };
 }
