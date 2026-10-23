@@ -47,10 +47,10 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "doctor": "expo-doctor",
+    "doctor": "npx expo-doctor",
     "prebuild": "expo prebuild --clean",
-    "test:interpretar": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/probar-interpretar.mjs",
-    "test:qr": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/probar-qr.mjs",
+    "test:interpretar": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/probar-interpretar.mjs",
+    "test:qr": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/probar-qr.mjs",
     "test": "npm run -s test:interpretar && npm run -s test:qr"
   },
   "private": true
