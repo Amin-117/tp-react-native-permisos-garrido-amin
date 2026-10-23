@@ -15,17 +15,14 @@ import { irConPermiso } from '@/lib/navegacion';
 export default function NuevoReporte() {
   const { borrador, actualizarBorrador, limpiarBorrador, crearReporte } = useAlmacen();
   const camara = usePermiso('camara');
-  const ubicacion = usePermiso('ubicacion');
   const [errores, setErrores] = useState<string[]>([]);
 
   // Al volver del modal o de otra pantalla del stack AppState no cambia: re-consultamos al enfocar.
   const consultarCamara = camara.consultar;
-  const consultarUbicacion = ubicacion.consultar;
   useFocusEffect(
     useCallback(() => {
       consultarCamara();
-      consultarUbicacion();
-    }, [consultarCamara, consultarUbicacion]),
+    }, [consultarCamara]),
   );
 
   function guardar() {
@@ -106,11 +103,11 @@ export default function NuevoReporte() {
           <Text style={estilos.suave}>
             {borrador.ubicacion ? describirUbicacion(borrador.ubicacion) : 'Sin ubicación'}
           </Text>
-          <Boton
-            texto="Marcar ubicación"
-            variante="secundario"
-            onPress={() => irConPermiso('ubicacion', ubicacion.estado, '/reporte/ubicacion')}
-          />
+          {/* Siempre a /reporte/ubicacion, sin pasar por la pantalla previa: ahí los sectores están
+              siempre visibles y "Usar mi ubicación" abre el modal. Si se deniega, el modal vuelve a
+              /reporte/ubicacion y no acá (si no, cada toque reabriría el modal y nunca se llegaría a
+              los sectores). */}
+          <Boton texto="Marcar ubicación" variante="secundario" onPress={() => router.push('/reporte/ubicacion')} />
         </View>
 
         {errores.length > 0 ? (
