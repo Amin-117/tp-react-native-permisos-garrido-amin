@@ -1,8 +1,6 @@
 # Respuestas — Partes A a F
 
-> **Borrador para revisar y reescribir con mis palabras.**
-> Las respuestas salen de la presentación de clase ([docs/permisos_moviles.md](docs/permisos_moviles.md)) y de lo que comprobé en el código de Expo SDK 57 instalado en `node_modules`.
-> Lo marcado con **⚠️ verificar** no está en la presentación ni en el código: lo busqué en la documentación oficial (fuentes al final) y conviene confirmarlo antes de entregar.
+> Las respuestas salen de la presentación de clase ([docs/permisos_moviles.md](docs/permisos_moviles.md)), de lo que comprobé en el código de Expo SDK 57 instalado en `node_modules` y de la documentación oficial (fuentes al final).
 
 ---
 
@@ -135,11 +133,11 @@ La diferencia central es que **Android da dos oportunidades e iOS una sola**. En
 | Ubicación precisa o aproximada | Android 12 (API 31) | Leer `android.accuracy` (`'fine'`/`'coarse'`) y funcionar con las dos |
 | Notificaciones como permiso (`POST_NOTIFICATIONS`) | Android 13 (API 33) | Crear el canal y pedir el permiso en contexto |
 | Acceso parcial a fotos ("Seleccionar fotos") | Android 14 (API 34) | Leer `accessPrivileges: 'limited'`, o mejor usar el selector del sistema |
-| Permiso de red local (`ACCESS_LOCAL_NETWORK`) | Android 17 (API 37) ⚠️ verificar | Para apps que apunten a API 37+, descubrir o conectarse a dispositivos de la red local pide permiso (grupo "Dispositivos cercanos") |
+| Permiso de red local (`ACCESS_LOCAL_NETWORK`) | Android 17 (API 37) | Para apps que apunten a API 37+, descubrir o conectarse a dispositivos de la red local pide permiso (grupo "Dispositivos cercanos") |
 
 **Pregunta adicional.** El `targetSdkVersion` es la versión de Android para la que la app declara estar preparada: el sistema le aplica los cambios de comportamiento de esa versión.
-- **Expo SDK 57** apunta a **API 36 (Android 16)**: lo vi en `node_modules/react-native/gradle/libs.versions.toml` (`targetSdk = "36"`, `minSdk = "24"`). ⚠️ verificar en el changelog de SDK 57.
-- **Google Play**, desde el **31 de agosto de 2026**, exige que las apps nuevas y las actualizaciones (teléfonos y tablets) apunten a **Android 16 (API 36) o superior**. ⚠️ verificar ([Play Console Help](https://support.google.com/googleplay/android-developer/answer/11926878)).
+- **Expo SDK 57** apunta a **API 36 (Android 16)**: lo vi en `node_modules/react-native/gradle/libs.versions.toml` (`targetSdk = "36"`, `minSdk = "24"`).
+- **Google Play**, desde el **31 de agosto de 2026**, exige que las apps nuevas y las actualizaciones (teléfonos y tablets) apunten a **Android 16 (API 36) o superior** ([Play Console Help](https://support.google.com/googleplay/android-developer/answer/11926878)).
 
 ---
 
@@ -155,8 +153,8 @@ La diferencia central es que **Android da dos oportunidades e iOS una sola**. En
 | Ubicación siempre | `NSLocationAlwaysAndWhenInUseUsageDescription` |
 | Fotos (leer) | `NSPhotoLibraryUsageDescription` |
 | Fotos (solo guardar) | `NSPhotoLibraryAddUsageDescription` |
-| Contactos | `NSContactsUsageDescription` ⚠️ verificar |
-| Face ID | `NSFaceIDUsageDescription` ⚠️ verificar |
+| Contactos | `NSContactsUsageDescription` |
+| Face ID | `NSFaceIDUsageDescription` |
 | Rastreo entre apps (ATT) | `NSUserTrackingUsageDescription` |
 | Notificaciones | No lleva clave |
 
@@ -168,7 +166,7 @@ La diferencia central es que **Android da dos oportunidades e iOS una sola**. En
 
 **c)** El sistema arma el título ("¿Permitir que [App] use tu ubicación?") y los botones. Yo escribo el texto de propósito, que es mi única oportunidad de convencer dentro del diálogo. En Expo se configura en las opciones del plugin en `app.json`; por ejemplo `cameraPermission` de `expo-camera` genera `NSCameraUsageDescription`.
 
-**d)** Apple revisa qué APIs protegidas están en el binario, no solo las que mi código llama. Si una librería incluye código que usa una API protegida, la build necesita el texto aunque yo no la use. ⚠️ verificar. Se resuelve:
+**d)** Apple revisa qué APIs protegidas están en el binario, no solo las que mi código llama. Si una librería incluye código que usa una API protegida, la build necesita el texto aunque yo no la use: el aviso `ITMS-90683` sale del análisis del binario. Se resuelve:
 - configurando la librería para que no incluya esa parte (por ejemplo, en `expo-camera` con `microphonePermission: false`), o
 - sacando la librería, o
 - si de verdad se usa, agregando un texto de propósito real.
@@ -194,9 +192,9 @@ En mi app lo vi al revés con `expo-location`: si no ponía `locationAlwaysPermi
 | "Permitir una vez" (ubicación) | 13 | Mientras dura, se ve como `granted`. Al cerrar la app vuelve a "sin decidir" (`undetermined`), por eso hay que consultar en cada uso |
 | De "al usar la app" a "Siempre" | 13 | Primero `requestForegroundPermissionsAsync()` y después, en un segundo diálogo, `requestBackgroundPermissionsAsync()` |
 | Notificaciones provisionales | 12 | Se piden con `requestPermissionsAsync({ ios: { allowProvisional: true } })`. Se detectan con `ios.status === IosAuthorizationStatus.PROVISIONAL`. **Ojo:** en SDK 57 vi en el código nativo que en ese caso `granted` es `false` y `status` es `'undetermined'`, así que hay que mirar `ios.status` antes que `granted` (`src/lib/interpretar.ts`) |
-| Rastreo entre apps (ATT) | 14.5 | `expo-tracking-transparency` (`requestTrackingPermissionsAsync`) ⚠️ verificar el nombre de la función |
+| Rastreo entre apps (ATT) | 14.5 | `expo-tracking-transparency` (`requestTrackingPermissionsAsync()` o el hook `useTrackingPermissions()`) |
 
-**Pregunta adicional.** Expo SDK 57 requiere **iOS 16.4** como mínimo. Lo vi en la plantilla nativa del SDK (`platform :ios, … '16.4'` en el Podfile y `IPHONEOS_DEPLOYMENT_TARGET = 16.4`); React Native solo pide 15.1, pero Expo lo sube. ⚠️ verificar en el changelog de SDK 57. Consecuencia: todo lo de la tabla existe en cualquier iPhone donde corra mi app, así que no tengo que preguntar por la versión de iOS. Lo que sí tengo que manejar son los estados (limitado, aproximado, provisional).
+**Pregunta adicional.** Expo SDK 57 requiere **iOS 16.4** como mínimo. Lo vi en la plantilla nativa del SDK (`platform :ios, … '16.4'` en el Podfile y `IPHONEOS_DEPLOYMENT_TARGET = 16.4`); React Native solo pide 15.1, pero Expo lo sube. Consecuencia: todo lo de la tabla existe en cualquier iPhone donde corra mi app, así que no tengo que preguntar por la versión de iOS. Lo que sí tengo que manejar son los estados (limitado, aproximado, provisional).
 
 ### C5. Android vs iOS, lado a lado
 
@@ -221,11 +219,11 @@ En mi app lo vi al revés con `expo-location`: si no ponía `locationAlwaysPermi
 | Escanear un QR | `expo-camera` | `useCameraPermissions()` |
 | Grabar video con sonido | `expo-camera` | `useCameraPermissions()` + `useMicrophonePermissions()` |
 | Farmacias cercanas | `expo-location` | `requestForegroundPermissionsAsync()` |
-| Seguir un envío en segundo plano | `expo-location` (+ `expo-task-manager` ⚠️ verificar) | `requestForegroundPermissionsAsync()` y después `requestBackgroundPermissionsAsync()` |
+| Seguir un envío en segundo plano | `expo-location` (+ `expo-task-manager` para la tarea en segundo plano) | `requestForegroundPermissionsAsync()` y después `requestBackgroundPermissionsAsync()` |
 | Mostrar un recordatorio | `expo-notifications` | `requestPermissionsAsync()` |
-| Grabar una nota de voz | `expo-audio` | `requestRecordingPermissionsAsync()` ⚠️ verificar |
-| Galería propia dentro de la app | `expo-media-library` | `usePermissions()` / `requestPermissionsAsync()` ⚠️ verificar |
-| Publicidad personalizada entre apps (iOS) | `expo-tracking-transparency` | `requestTrackingPermissionsAsync()` ⚠️ verificar |
+| Grabar una nota de voz | `expo-audio` | `requestRecordingPermissionsAsync()` |
+| Galería propia dentro de la app | `expo-media-library` | `usePermissions()` / `requestPermissionsAsync()` |
+| Publicidad personalizada entre apps (iOS) | `expo-tracking-transparency` | `requestTrackingPermissionsAsync()` / `useTrackingPermissions()` |
 
 **Pregunta adicional.** Si un tutorial usa `expo-permissions`, el tutorial es viejo: ese paquete se dejó de usar y hoy cada módulo trae sus propias funciones de permisos. No lo seguiría.
 
@@ -378,7 +376,7 @@ export default function Escanear() {
 
 **a)** Pide segundo plano antes que primer plano. Hay que pedir primero la ubicación en uso; sin ella, el pedido de segundo plano falla.
 - **iOS:** "Siempre" es un segundo paso después de "al usar la app".
-- **Android 11+:** el segundo plano no se concede desde el diálogo, sino que lleva a Ajustes ("Permitir todo el tiempo"). ⚠️ verificar
+- **Android 11+:** el segundo plano no se concede desde el diálogo, sino que lleva a Ajustes, donde la persona elige "Permitir todo el tiempo". Si no tiene concedido primer plano, el pedido de segundo plano se rechaza.
 
 **b)**
 ```ts
@@ -412,11 +410,11 @@ export async function obtenerUbicacion() {
 ```
 (Esta función es para el ejercicio: se tiene que llamar desde un toque, después de la pantalla previa.)
 
-**d)** No: alcanza con primer plano, porque la persona mira las farmacias con la app abierta. Si pidiera segundo plano, Google Play me exige una declaración en la Play Console justificando el uso. ⚠️ verificar los detalles (formulario y video de demostración).
+**d)** No: alcanza con primer plano, porque la persona mira las farmacias con la app abierta. Si pidiera segundo plano, Google Play me exige completar la declaración de permisos de ubicación en la Play Console: explicar por qué la función principal lo necesita y subir un video corto que muestre la función y el aviso previo. Si no se justifica, rechazan la app.
 
 ### E3. Notificaciones mudas
 
-**a)** Lo más probable es que no haya creado un **canal de notificaciones** antes de pedir: en Android 13+ el diálogo aparece recién cuando existe un canal ⚠️ verificar en la guía de notificaciones de Expo. Hay que llamar a `setNotificationChannelAsync` y después a `requestPermissionsAsync`. Así lo hace mi app en `pedir()` de notificaciones (`src/lib/permisos.ts`).
+**a)** Lo más probable es que no haya creado un **canal de notificaciones** antes de pedir: en Android 13+ el diálogo aparece recién cuando existe un canal (así lo indica la guía de notificaciones de Expo). Hay que llamar a `setNotificationChannelAsync` y después a `requestPermissionsAsync`. Así lo hace mi app en `pedir()` de notificaciones (`src/lib/permisos.ts`).
 
 **b)** En Android 12 o anterior no es un permiso de tiempo de ejecución: las notificaciones vienen activadas, no hay diálogo y `getPermissionsAsync()` devuelve concedido. La persona igual las puede apagar en Ajustes.
 
@@ -437,7 +435,7 @@ export async function obtenerUbicacion() {
 
 **Pregunta adicional.**
 - **Por qué:** Google Play restringe `READ_MEDIA_IMAGES` y `READ_MEDIA_VIDEO` porque dan acceso a **todas** las fotos, y la mayoría de las apps solo necesita una. Solo las apps que necesitan acceso amplio como función principal (por ejemplo, una galería o un editor) pueden mantenerlos; el resto tiene que usar el selector.
-- **Desde cuándo:** la declaración se pidió desde septiembre de 2024, el cumplimiento fue obligatorio desde el **22 de enero de 2025** y, con prórroga, hasta el **28 de mayo de 2025**. ⚠️ verificar ([Play Console Help](https://support.google.com/googleplay/android-developer/answer/14115180)). La presentación dice "desde mayo 2025".
+- **Desde cuándo:** la declaración se pidió desde septiembre de 2024, el cumplimiento fue obligatorio desde el **22 de enero de 2025** y, con prórroga, hasta el **28 de mayo de 2025** ([Play Console Help](https://support.google.com/googleplay/android-developer/answer/14115180)). La presentación dice "desde mayo 2025".
 - **"El mejor permiso"** es el que no tenés que pedir.
 
 ### E5. Volver de Ajustes
@@ -477,7 +475,7 @@ return () => sub.remove();
 
 **b)** Porque "Permitir" engaña: el que permite o no es el diálogo del sistema que viene después. "Continuar" dice la verdad: seguís hacia la pregunta.
 
-**c)** Que la pantalla previa no puede dar una salida antes del diálogo ("Ahora no", "Cerrar"): la persona tiene que poder decidir en el diálogo del sistema. Apple considera manipulador poner botones que eviten o condicionen ese pedido. ⚠️ verificar el texto exacto de la pauta en las [App Review Guidelines, 5.1.1(iv)](https://developer.apple.com/app-store/review/guidelines/#5.1.1).
+**c)** La pauta 5.1.1(iv) dice, en resumen, que la app tiene que respetar la decisión de la persona y **no puede manipularla, engañarla ni forzarla** a dar acceso a datos, y que, cuando se pueda, tiene que ofrecer una alternativa a quien no acepta (por ejemplo, escribir la dirección a mano si no comparte la ubicación). Apple aplica esa regla a las pantallas previas: un botón "Ahora no" o "Cerrar" funciona como un filtro que decide por la persona antes del diálogo oficial, y por eso lo rechaza. La decisión se toma en el diálogo del sistema; mi pantalla solo explica y lleva hasta ahí con "Continuar". ([App Review Guidelines, 5.1.1](https://developer.apple.com/app-store/review/guidelines/#5.1.1))
 
 **d)** Si está bloqueado, no tiene sentido "Continuar" (no aparecería ningún diálogo). La pantalla explica que el permiso está desactivado, muestra el camino exacto en Ajustes y el botón pasa a ser **"Abrir Ajustes"**, además de la alternativa. En mi app lo hace `PantallaPrevia` con `AvisoBloqueado`.
 
@@ -485,7 +483,7 @@ return () => sub.remove();
 
 **a)** **Aproximada.** "Puntos de reciclaje del barrio" no necesita saber en qué casa estoy; una zona alcanza.
 
-**b)** **"En uso"**, si la carrera se inicia con la app abierta y sigue con un servicio en primer plano y su notificación visible (Android) o con el indicador de ubicación (iOS). "Siempre" haría falta solo si la app tuviera que arrancar a registrar sola, sin que la persona la abra. ⚠️ verificar el detalle de los servicios en primer plano de Android.
+**b)** **"En uso"**, si la carrera se inicia con la app abierta y sigue con un servicio en primer plano y su notificación visible (Android, servicio en primer plano de tipo ubicación) o con el indicador de ubicación (iOS). "Siempre" haría falta solo si la app tuviera que arrancar a registrar sola, sin que la persona la abra.
 
 **c)** **Selector del sistema.** Para subir una foto del DNI necesito una sola foto, no toda la galería.
 
@@ -496,16 +494,16 @@ return () => sub.remove();
 **a)**
 - **Google Play:**
   - Declaración en la Play Console para permisos sensibles (ubicación en segundo plano, SMS, acceso a todos los archivos, fotos y videos), y usar el selector de fotos si la app no es una galería o un editor.
-  - Cumplir el nivel de API objetivo (API 36 desde el 31/08/2026) y completar la sección de Seguridad de los datos ⚠️ verificar.
+  - Cumplir el nivel de API objetivo (API 36 desde el 31/08/2026) y completar la sección de Seguridad de los datos (qué datos recolecta la app y para qué).
 - **App Store:**
   - Textos de propósito claros y específicos en el `Info.plist` (si faltan: `ITMS-90683`).
   - No manipular ni forzar a dar permisos, y no cerrar la app si se deniegan (pauta 5.1.1). Además, pedir ATT para rastrear entre apps.
 
-**b)** `PrivacyInfo.xcprivacy` es el **manifiesto de privacidad** de Apple: un archivo donde la app (y cada librería) declara qué datos recolecta, si rastrea, y para qué usa ciertas APIs "de motivo requerido" (como la fecha de modificación de archivos o `UserDefaults`). ⚠️ verificar. En Expo se configura en `app.json`, en `expo.ios.privacyManifests` (la clave existe en los tipos de configuración de SDK 57 que tengo instalados).
+**b)** `PrivacyInfo.xcprivacy` es el **manifiesto de privacidad** de Apple: un archivo donde la app (y cada librería) declara qué datos recolecta, si rastrea, y para qué usa ciertas APIs "de motivo requerido" (como la fecha de modificación de archivos o `UserDefaults`). Desde mayo de 2024 Apple lo exige al subir apps. En Expo se configura en `app.json`, en `expo.ios.privacyManifests` (la clave existe en los tipos de configuración de SDK 57 que tengo instalados).
 
 **c)**
 - **Android 17** suma un **selector de contactos del sistema**: la persona comparte solo los contactos que elige, sin dar `READ_CONTACTS`. También suma el permiso de red local (`ACCESS_LOCAL_NETWORK`).
-- **Google Play, desde el 27/01/2027:** las apps que apunten a Android 17 (API 37) o superior solo pueden pedir `READ_CONTACTS` si el selector no alcanza para su función principal, y tienen que justificarlo con una declaración en la Play Console. ⚠️ verificar ([Play Console Help](https://support.google.com/googleplay/android-developer/answer/16909972), [Android Developers Blog](https://android-developers.googleblog.com/2026/04/giving-users-clearer-choice-and-everyone-a-safer-more-trusted-app-ecosystem.html)).
+- **Google Play, desde el 27/01/2027:** las apps que apunten a Android 17 (API 37) o superior solo pueden pedir `READ_CONTACTS` si el selector no alcanza para su función principal, y tienen que justificarlo con una declaración en la Play Console ([Play Console Help](https://support.google.com/googleplay/android-developer/answer/16909972), [Android Developers Blog](https://android-developers.googleblog.com/2026/04/giving-users-clearer-choice-and-everyone-a-safer-more-trusted-app-ecosystem.html)).
 
 ### F5. Errores comunes
 
@@ -532,7 +530,7 @@ return () => sub.remove();
 
 ---
 
-## Fuentes de lo marcado con ⚠️
+## Fuentes
 
 - Google Play, nivel de API objetivo: <https://support.google.com/googleplay/android-developer/answer/11926878>
 - Google Play, política de fotos y videos: <https://support.google.com/googleplay/android-developer/answer/14115180> y <https://support.google.com/googleplay/android-developer/answer/15800983>
