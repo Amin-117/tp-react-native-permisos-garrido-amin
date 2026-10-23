@@ -1,0 +1,6 @@
+# Claves NS…UsageDescription del Info.plist generado por Expo
+# Comando: npx expo config --type introspect (22/10/2026)
+
+NSLocalNetworkUsageDescription: Expo Dev Launcher uses the local network to discover and connect to development servers running on your computer.
+NSCameraUsageDescription: Usamos tu cámara para leer el QR de la puerta del aula y sacar fotos del desperfecto que reportás.
+NSLocationWhenInUseUsageDescription: Usamos tu ubicación para marcar en qué parte del edificio está el problema que reportás.
